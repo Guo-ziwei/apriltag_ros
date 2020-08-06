@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="-7.00587 1.38311 3.64586 -0.0874548 0.6190111 -0.1757377 1 world camera_link 100" />
+  <node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="-0.00587 1.38311 0.64586 -0.0874548 0.6190111 -0.1757377 1 camera_link tag 100" />
+</launch>

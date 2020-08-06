@@ -1,0 +1,18 @@
+%YAML:1.0
+---
+# projection_parameters:
+#    fx: 2951.25851710
+#    fy: 2949.37436936
+#    cx: 1901.64605088
+#    cy: 1060.90134904
+
+projection_parameters:
+   fx: 1484.116358192
+   fy: 1483.644867849  
+   cx: 950.3265859807
+   cy: 542.5114765327
+    
+distortion_parameters:
+   k1: 0.4162
+   k2: -1.9868
+   k3: 2.8968
