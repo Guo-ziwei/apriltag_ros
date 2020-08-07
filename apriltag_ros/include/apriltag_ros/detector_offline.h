@@ -22,6 +22,7 @@ struct Frame
 {
     cv::Mat frame;
     double time_stamp;
+    int led_on;
 };
 
 class DetectorOffline

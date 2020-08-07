@@ -86,6 +86,7 @@ int DetectorOffline::ReadImage()
         // cv::imshow("Undistortion", frame.frame);
         // cv::waitKey(3);
         // std::cout<<"get frame"<<std::endl;
+        frame.led_on = 0;
         frame.time_stamp = cap.get(CV_CAP_PROP_POS_MSEC)/1e3;
         // gettimeofday(&start, nullptr);
         
@@ -100,14 +101,21 @@ int DetectorOffline::ReadImage()
             return -2;
         }
         AprilTagDetectionArray tag_pose_array = tag_detector_->detectTags(cv_image_, imagePoints);
-
-        // cv::Rect roi(imagePoints[0].x-100, imagePoints[0].y-100, 200, 200);
-        // cv::Mat crroped = distortion_image(roi);
-        // cv::Mat1b mask1, mask2;
-        // cv::cvtColor(crroped, crroped, cv::COLOR_BGR2HSV);
-        // cv::inRange(crroped, cv::Scalar(0, 70, 50), cv::Scalar(10, 255, 255), mask1);
-        // cv::inRange(crroped, cv::Scalar(170, 70, 50), cv::Scalar(180, 250, 255), mask2);
-        // cv::Mat1b mask = mask1 | mask2;
+        cv::Rect roi(imagePoints[2].x-120, imagePoints[2].y-120, 240, 240);
+        cv::Mat crroped = distortion_image(roi);
+        cv::Mat1b mask1, mask2;
+        cv::cvtColor(crroped, crroped, cv::COLOR_BGR2HSV);
+        cv::inRange(crroped, cv::Scalar(0, 70, 50), cv::Scalar(10, 255, 255), mask1);
+        cv::inRange(crroped, cv::Scalar(170, 70, 50), cv::Scalar(180, 250, 255), mask2);
+        cv::Mat1b mask = mask1 | mask2;
+        cv::Mat_<uchar>::iterator it = mask.begin();
+        cv::Mat_<uchar>::iterator it_end = mask.end();
+        for (; it != it_end; it++)
+        {
+            if (*it == 255)
+                frame.led_on = 1;
+        }
+        
         // cv::imshow("Red Detections", mask);
         // cv::waitKey(3);
         for (unsigned int i=0; i<tag_pose_array.detections.size(); i++) {
@@ -121,8 +129,8 @@ int DetectorOffline::ReadImage()
             position_marker.y = pose.pose.position.y;
             position_marker.z = pose.pose.position.z;
             poses.points.push_back(position_marker);
-            std::fprintf(outfile, "%lf %lf %lf %lf %lf %lf %lf %lf\n", pose.header.stamp.toSec(), pose.pose.position.x, pose.pose.position.y, pose.pose.position.z,
-                pose.pose.orientation.w, pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z);
+            std::fprintf(outfile, "%lf %lf %lf %lf %lf %lf %lf %lf %d\n", pose.header.stamp.toSec(), pose.pose.position.x, pose.pose.position.y, pose.pose.position.z,
+                    pose.pose.orientation.x, pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.w, frame.led_on);
         }
         pub_poses.publish(poses);
         // ROS_INFO("seq:%d",header.seq);
