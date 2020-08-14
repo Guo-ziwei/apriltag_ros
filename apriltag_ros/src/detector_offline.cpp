@@ -101,7 +101,7 @@ int DetectorOffline::ReadImage()
             return -2;
         }
         AprilTagDetectionArray tag_pose_array = tag_detector_->detectTags(cv_image_, imagePoints);
-        cv::Rect roi(imagePoints[2].x-120, imagePoints[2].y-120, 240, 240);
+        cv::Rect roi(imagePoints[2].x-60, imagePoints[2].y-60, 120, 120);
         cv::Mat crroped = distortion_image(roi);
         cv::Mat1b mask1, mask2;
         cv::cvtColor(crroped, crroped, cv::COLOR_BGR2HSV);
@@ -116,7 +116,7 @@ int DetectorOffline::ReadImage()
                 frame.led_on = 1;
         }
         
-        // cv::imshow("Red Detections", mask);
+        // cv::imshow("Red Detections", crroped);
         // cv::waitKey(3);
         for (unsigned int i=0; i<tag_pose_array.detections.size(); i++) {
             geometry_msgs::PoseStamped pose;
@@ -130,7 +130,7 @@ int DetectorOffline::ReadImage()
             position_marker.z = pose.pose.position.z;
             poses.points.push_back(position_marker);
             std::fprintf(outfile, "%lf %lf %lf %lf %lf %lf %lf %lf %d\n", pose.header.stamp.toSec(), pose.pose.position.x, pose.pose.position.y, pose.pose.position.z,
-                    pose.pose.orientation.x, pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.w, frame.led_on);
+                    pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z, pose.pose.orientation.w, frame.led_on);
         }
         pub_poses.publish(poses);
         // ROS_INFO("seq:%d",header.seq);
