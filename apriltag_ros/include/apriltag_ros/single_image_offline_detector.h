@@ -1,5 +1,5 @@
-#pragma once
-
+#ifndef SINGLE_IMAGE_OFFLINE_DETECTOR_H
+#define SINGLE_IMAGE_OFFLINE_DETECTOR_H
 #include <chrono>
 #include <memory>
 #include <mutex>
@@ -12,20 +12,8 @@
 
 #include "apriltag_ros/common_functions.h"
 #include "camera.h"
-
 namespace apriltag_ros {
-
-struct Frame {
-    cv::Mat frame;
-    double time_stamp;
-    int led_on;
-};
-
-class DetectorOffline {
-  public:
-    DetectorOffline(ros::NodeHandle nh, ros::NodeHandle nh_private);
-    int ReadImage();
-
+class SingleDetector {
   private:
     ros::NodeHandle nh_;
     ros::NodeHandle nh_private_;
@@ -37,11 +25,16 @@ class DetectorOffline {
     ros::Publisher tag_detections_publisher_;
     std_msgs::Header header;
     sensor_msgs::ImagePtr msg;
-    std::string video_file;
-    std::string output_file;
-    cv::VideoCapture cap;
     ros::Time start_time;
     ros::Publisher pub_poses;
+    std::string image_file;
+
+  public:
+    SingleDetector(ros::NodeHandle nh, ros::NodeHandle nh_private);
+    ~SingleDetector() = default;
+    int readImage();
 };
 
 }  // namespace apriltag_ros
+
+#endif  // APRILTAG_ROS_SINGLE_IMAGE_DETECTOR_H

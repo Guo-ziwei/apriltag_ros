@@ -44,28 +44,27 @@
 #ifndef APRILTAG_ROS_SINGLE_IMAGE_DETECTOR_H
 #define APRILTAG_ROS_SINGLE_IMAGE_DETECTOR_H
 
-#include "apriltag_ros/common_functions.h"
 #include <apriltag_ros/AnalyzeSingleImage.h>
 
-namespace apriltag_ros
-{
+#include "apriltag_ros/common_functions.h"
 
-class SingleImageDetector
-{
- private:
-  TagDetector tag_detector_;
-  ros::ServiceServer single_image_analysis_service_;
+namespace apriltag_ros {
 
-  ros::Publisher tag_detections_publisher_;
-  
- public:
-  SingleImageDetector(ros::NodeHandle& nh, ros::NodeHandle& pnh);
+class SingleImageDetector {
+  private:
+    TagDetector tag_detector_;
+    ros::ServiceServer single_image_analysis_service_;
 
-  // The function which provides the single image analysis service
-  bool analyzeImage(apriltag_ros::AnalyzeSingleImage::Request& request,
-                     apriltag_ros::AnalyzeSingleImage::Response& response);
+    ros::Publisher tag_detections_publisher_;
+
+  public:
+    SingleImageDetector(ros::NodeHandle& nh, ros::NodeHandle& pnh);
+
+    // The function which provides the single image analysis service
+    bool analyzeImage(
+        apriltag_ros::AnalyzeSingleImage::Request& request, apriltag_ros::AnalyzeSingleImage::Response& response);
 };
 
-} // namespace apriltag_ros
+}  // namespace apriltag_ros
 
-#endif // APRILTAG_ROS_SINGLE_IMAGE_DETECTOR_H
+#endif  // APRILTAG_ROS_SINGLE_IMAGE_DETECTOR_H

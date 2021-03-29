@@ -100,6 +100,9 @@ target_link_libraries(detector_offline_only ${PROJECT_NAME}_common ${catkin_LIBR
 add_library(${PROJECT_NAME}_single_image_detector src/single_image_detector.cpp)
 target_link_libraries(${PROJECT_NAME}_single_image_detector ${PROJECT_NAME}_common ${catkin_LIBRARIES})
 
+add_library(single_image_offline_detector src/single_image_offline_detector.cpp)
+target_link_libraries(single_image_offline_detector ${PROJECT_NAME}_common ${catkin_LIBRARIES})
+
 add_executable(${PROJECT_NAME}_continuous_node src/${PROJECT_NAME}_continuous_node.cpp)
 add_dependencies(${PROJECT_NAME}_continuous_node ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(${PROJECT_NAME}_continuous_node ${PROJECT_NAME}_continuous_detector ${catkin_LIBRARIES})
@@ -119,6 +122,10 @@ target_link_libraries(${PROJECT_NAME}_offline_node detector_offline ${catkin_LIB
 add_executable(${PROJECT_NAME}_offline_only_node src/${PROJECT_NAME}_offline_detect_only_node.cpp)
 add_dependencies(${PROJECT_NAME}_offline_only_node ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(${PROJECT_NAME}_offline_only_node detector_offline_only ${catkin_LIBRARIES})
+
+add_executable(${PROJECT_NAME}_single_image_offline_detector_node src/single_image_offline_detector_node.cpp)
+add_dependencies(${PROJECT_NAME}_single_image_offline_detector_node ${PROJECT_NAME}_generate_messages_cpp)
+target_link_libraries(${PROJECT_NAME}_single_image_offline_detector_node single_image_offline_detector ${catkin_LIBRARIES})
 
 #############
 ## Install ##
