@@ -1,19 +1,58 @@
 #include "apriltag_ros/detector_offline.h"
 
+#include <Eigen/Eigen>
 #include <opencv2/opencv.hpp>
 #include <sys/time.h>
 
 using namespace std;
 
 namespace apriltag_ros {
+/*
+ * Z-Y-X Eular angles
+ */
+template <typename T>
+Eigen::Matrix<T, 3, 1> Quaternion2Euler(const Eigen::Quaternion<T>& q) {
+    const double Epsilon = 0.0009765625f;
+    const double threshold = 0.5 - Epsilon;
+    Eigen::Matrix<T, 3, 1> eular(0, 0, 0);
+    double singular = static_cast<double>(q.w() * q.y() - q.x() * q.z());
+    if (singular < -threshold || singular > threshold) {
+        if (singular < -0.00001) {
+            eular(2) = static_cast<T>(2 * atan2(q.x(), q.w()));
+            eular(1) = static_cast<T>(-M_PI / 2.0);
+        } else if (singular > 0.000001) {
+            eular(2) = static_cast<T>(-2 * atan2(q.x(), q.w()));
+            eular(1) = static_cast<T>(M_PI / 2.0);
+        }
+        eular(0) = 0.0;
+    } else {
+        eular(0) = static_cast<T>(
+            atan2(2 * (q.y() * q.z() + q.w() * q.x()), q.w() * q.w() - q.x() * q.x() - q.y() * q.y() + q.z() * q.z()));
+        eular(1) = static_cast<T>(std::asin(-2 * (q.x() * q.z() - q.w() * q.y())));
+        eular(2) = static_cast<T>(
+            atan2(2 * (q.x() * q.y() + q.w() * q.z()), q.w() * q.w() + q.x() * q.x() - q.y() * q.y() - q.z() * q.z()));
+    }
+    return eular;
+}
 
 DetectorOffline::DetectorOffline(ros::NodeHandle nh, ros::NodeHandle nh_private) : nh_(nh), nh_private_(nh_private) {
     if (nh_private_.hasParam("video_file")) {
         ROS_INFO("nh_private_ has video_file parameter");
     }
-    nh_private_.param<std::string>("video_file", video_file, "/home/guoziwei/Documents/output.avi");
+    nh_private_.param<std::string>("video_file", video_file, "");
+    nh_private_.param<std::string>("bag_file", bag_file, "");
     nh_private_.param<std::string>("output_file", output_file, "/home/guoziwei/Documents/outputpose.txt");
-    ROS_INFO("Got param: %s", video_file.c_str());
+    if (video_file.empty()) {
+        ROS_WARN("Video name is not passed\n");
+    } else {
+        ROS_INFO("Got param: %s", video_file.c_str());
+        cap = cv::VideoCapture(video_file);
+    }
+    if (bag_file.empty()) {
+        ROS_WARN("bagfile name is not passed\n");
+    } else {
+        ROS_INFO("Got param: %s", bag_file.c_str());
+    }
     ROS_INFO("Got param: %s", output_file.c_str());
     pub_poses = nh.advertise<visualization_msgs::Marker>("position_xy", 1000);
     tag_detector_ = std::shared_ptr<TagDetector>(new TagDetector(nh_private_));
@@ -24,13 +63,12 @@ DetectorOffline::DetectorOffline(ros::NodeHandle nh, ros::NodeHandle nh_private)
         tag_detections_image_publisher_ = it_->advertise("tag_detections_image", 1);
         // tag_detections_image_publisher_.publish(cv_image_->toImageMsg());
     }
-    cap = cv::VideoCapture(video_file);
     start_time = ros::Time::now();
     header.frame_id = "/camera_link";
     header.seq = 0;
 }
 
-int DetectorOffline::ReadImage() {
+int DetectorOffline::readImage() {
     if (!cap.isOpened()) {
         std::cerr << "Error opening video file" << std::endl;
         return -1;
@@ -137,4 +175,55 @@ int DetectorOffline::ReadImage() {
     return 0;
 }
 
+int DetectorOffline::readCompressedImageFromBag() {
+    FILE* outfile;
+    outfile = std::fopen(output_file.c_str(), "w");
+    std::vector<cv::Point2d> imagePoints;
+    bag.open(bag_file);
+    std::vector<std::string> topics;
+    topics.push_back(std::string("/ninebot/fisheye_left/compressed"));
+    rosbag::View view(bag, rosbag::TopicQuery(topics));
+    for (rosbag::MessageInstance const compress_image : view) {
+        sensor_msgs::CompressedImageConstPtr i = compress_image.instantiate<sensor_msgs::CompressedImage>();
+        header = i->header;
+        cv_bridge::CvImagePtr compressed_ptr = cv_bridge::toCvCopy(i, sensor_msgs::image_encodings::RGB8);
+        try {
+            cv_image_ = boost::make_shared<cv_bridge::CvImage>(header, "rgb8", compressed_ptr->image);
+        } catch (cv_bridge::Exception& e) {
+            ROS_ERROR("cv_bridge exception: %s", e.what());
+            return -2;
+        }
+        AprilTagDetectionArray tag_pose_array = tag_detector_->detectTags(cv_image_, imagePoints);
+        for (unsigned int i = 0; i < tag_pose_array.detections.size(); i++) {
+            geometry_msgs::PoseStamped pose;
+            geometry_msgs::Point position_marker;
+            pose.pose = tag_pose_array.detections[i].pose.pose.pose;
+            pose.header = tag_pose_array.detections[i].pose.header;
+            // poses.header = tag_pose_array.detections[i].pose.header;
+            // poses.header.stamp = ros::Time::now();
+            position_marker.x = pose.pose.position.x;
+            position_marker.y = pose.pose.position.y;
+            position_marker.z = pose.pose.position.z;
+            // poses.points.push_back(position_marker);
+            Eigen::Vector3d position(pose.pose.position.x, pose.pose.position.y, pose.pose.position.z);
+            Eigen::Quaterniond attitude(
+                pose.pose.orientation.w, pose.pose.orientation.x, pose.pose.orientation.y, pose.pose.orientation.z);
+            attitude = attitude.conjugate();
+            position = attitude * position;
+            const auto eular_vec = Quaternion2Euler(attitude);
+            std::fprintf(
+                outfile, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", pose.header.stamp.toSec(), position[0],
+                position[1], position[2], attitude.w(), attitude.x(), attitude.y(), attitude.z(), eular_vec[0], eular_vec[1],
+                eular_vec[2]);
+        }
+        if (draw_tag_detections_image_) {
+            tag_detector_->drawDetections(cv_image_);
+            tag_detections_image_publisher_.publish(cv_image_->toImageMsg());
+        }
+        // cv::imshow("image", compressed_ptr->image);
+        // cv::waitKey(1);
+    }
+    std::fclose(outfile);
+    return 0;
+}
 }  // namespace apriltag_ros

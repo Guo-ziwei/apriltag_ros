@@ -7,15 +7,16 @@
 #    cy: 1060.90134904
 
 # projection_parameters:
-#    fx: 1484.116358192
-#    fy: 1483.644867849  
-#    cx: 950.3265859807
-#    cy: 542.5114765327
+#    fx: 1921.14109
+#    fy: 1922.83154  
+#    cx: 1998.12125
+#    cy: 1497.96133
 
 # distortion_parameters:
-#    k1: 0.4162
-#    k2: -1.9868
-#    k3: 2.8968
+#    model: "PinHole"
+#    k1: 0.0072
+#    k2: 0.016
+#    k3: -0.0259
 
 # projection_parameters:
 #    fx: 916.4670
@@ -28,13 +29,24 @@
 #    k2: -0.0552
 #    k3: 0.0589
 
-projection_parameters:
-   fx: 3117.535
-   fy: 3107.897
-   cx: 2001.491
-   cy: 1499.586
+# projection_parameters:
+#    fx: 3117.535
+#    fy: 3107.897
+#    cx: 2001.491
+#    cy: 1499.586
     
+# distortion_parameters:
+#    k1: 0.2658
+#    k2: -1.2732
+#    k3: 1.9711
+
+projection_parameters: #WARNING! default 1280*720. change in camera.cpp #camid 1
+   fx: 453.054315901267
+   fy: 454.8322450901504
+   cx: 639.0741295520897
+   cy: 358.86313666505737
+
 distortion_parameters:
-   k1: 0.2658
-   k2: -1.2732
-   k3: 1.9711
+   model: 1
+   xi:  0.09876699101416171
+   alpha: 0.7703926757783088

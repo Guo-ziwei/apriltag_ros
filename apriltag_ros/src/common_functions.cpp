@@ -211,24 +211,26 @@ AprilTagDetectionArray TagDetector::detectTags(const cv_bridge::CvImagePtr& imag
     for (int i = 0; i < zarray_size(detections_); i++) {
         apriltag_detection_t* det;
         zarray_get(detections_, i, &det);
-        cv::line(
-            gray_image, cv::Point(det->p[0][0], det->p[0][1]), cv::Point(det->p[1][0], det->p[1][1]), cv::Scalar(0, 0xff, 0),
-            8);
-        cv::line(
-            gray_image, cv::Point(det->p[0][0], det->p[0][1]), cv::Point(det->p[3][0], det->p[3][1]), cv::Scalar(0, 0, 0xff),
-            8);
-        cv::line(
-            gray_image, cv::Point(det->p[1][0], det->p[1][1]), cv::Point(det->p[2][0], det->p[2][1]), cv::Scalar(0, 0, 0xff),
-            8);
-        cv::line(
-            gray_image, cv::Point(det->p[2][0], det->p[2][1]), cv::Point(det->p[3][0], det->p[3][1]), cv::Scalar(0, 0, 0xff),
-            8);
-        cv::circle(gray_image, cv::Point(det->c[0], det->c[1]), 2, cv::Scalar(0, 0, 0xff), 8);
+        std::vector<cv::Point2d> tagImagePoints, tagUndistortImagePoints;
+        for (size_t i = 0; i < 4; i++) {
+            tagImagePoints.push_back(cv::Point2d(det->p[i][0], det->p[i][1]));
+        }
+        tagImagePoints.push_back(cv::Point2d(det->c[0], det->c[1]));
+        if (camera_info.camera_model == CameraModel::DS) {
+            camera_info.doubleSphereUndistort(tagImagePoints, tagUndistortImagePoints);
+        } else {
+            tagUndistortImagePoints = tagImagePoints;
+        }
+        cv::line(gray_image, tagUndistortImagePoints[0], tagUndistortImagePoints[1], cv::Scalar(0, 0xff, 0), 8);
+        cv::line(gray_image, tagUndistortImagePoints[0], tagUndistortImagePoints[3], cv::Scalar(0, 0, 0xff), 8);
+        cv::line(gray_image, tagUndistortImagePoints[1], tagUndistortImagePoints[2], cv::Scalar(0, 0, 0xff), 8);
+        cv::line(gray_image, tagUndistortImagePoints[2], tagUndistortImagePoints[3], cv::Scalar(0, 0, 0xff), 8);
+        cv::circle(gray_image, tagUndistortImagePoints[4], 2, cv::Scalar(0, 0, 0xff), 8);
         // std::cout<<det->c[0]<<" "<<det->c[1]<<std::endl;
     }
 
     cv::imshow("Tag Detections", gray_image);
-    cv::waitKey();
+    cv::waitKey(1);
 
     // If remove_dulpicates_ is set to true, then duplicate tags are not allowed.
     // Thus any duplicate tag IDs visible in the scene must include at least 1
@@ -310,12 +312,21 @@ AprilTagDetectionArray TagDetector::detectTags(const cv_bridge::CvImagePtr& imag
         // AprilTag 2's frames altogether.
         // TODO solvePnP[Ransac] better?
         std::vector<cv::Point3d> standaloneTagObjectPoints;
-        std::vector<cv::Point2d> standaloneTagImagePoints;
+        std::vector<cv::Point2d> standaloneTagImagePoints, standaloneTagUndistortImagePoints;
         addObjectPoints(tag_size / 2, cv::Matx44d::eye(), standaloneTagObjectPoints);
         addImagePoints(detection, standaloneTagImagePoints);
-        imagePoints = standaloneTagImagePoints;
+        if (camera_info.camera_model == CameraModel::DS) {
+            camera_info.doubleSphereUndistort(standaloneTagImagePoints, standaloneTagUndistortImagePoints);
+        } else {
+            standaloneTagUndistortImagePoints = standaloneTagImagePoints;
+        }
+        imagePoints = standaloneTagUndistortImagePoints;
+        ROS_INFO("points size %lu\n", standaloneTagUndistortImagePoints.size());
+        if (standaloneTagUndistortImagePoints.size() < 4) {
+            break;
+        }
         Eigen::Matrix4d transform = getRelativeTransform(
-            standaloneTagObjectPoints, standaloneTagImagePoints, camera_info.fx, camera_info.fy, camera_info.cx,
+            standaloneTagObjectPoints, standaloneTagUndistortImagePoints, camera_info.fx, camera_info.fy, camera_info.cx,
             camera_info.cy);
         Eigen::Matrix3d rot = transform.block(0, 0, 3, 3);
         Eigen::Quaternion<double> rot_quaternion(rot);

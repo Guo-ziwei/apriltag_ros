@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   cmake_modules
   nodelet
   pluginlib
+  rosbag
 )
 
 find_package(Boost REQUIRED)

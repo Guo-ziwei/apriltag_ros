@@ -19,7 +19,7 @@
 #   ]
 standalone_tags:
   [
-    {id: 1, size: 0.181, name: tag-1},
+    {id: 1, size: 0.173, name: tag-1},
     # {id: 1, size: 0.221, name: tag-1}
     {id: 2, size: 0.221, name: tag-2}
     # {id: 3, size: 0.086, name: tag-3}

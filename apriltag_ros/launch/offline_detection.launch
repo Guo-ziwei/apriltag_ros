@@ -14,8 +14,9 @@
     <!-- Remap topics from those used in code to those on the ROS network -->
     <remap from="image_rect" to="$(arg camera_name)/$(arg image_topic)" />
     <remap from="camera_info" to="$(arg camera_name)/camera_info" />
-    <param name="video_file" type="string" value="/mnt/d/video/0730/VID_20200730_160802.mp4"/>
-    <param name="output_file" type="string" value="/mnt/d/video/0730/20200730_160802.txt"/>
+    <param name="video_file" type="string" value=""/>
+    <param name="bag_file" type="string" value="/home/guoziwei/IMUdebug/mower_2021-11-18-17-16-04.bag"/>
+    <param name="output_file" type="string" value="/home/guoziwei/IMUdebug/mower_2021-11-18-17-16-04.txt"/>
     <param name="camera_frame" type="str" value="$(arg camera_frame)" />
     <param name="publish_tag_detections_image" type="bool" value="false" />      <!-- default: false -->
   </node>

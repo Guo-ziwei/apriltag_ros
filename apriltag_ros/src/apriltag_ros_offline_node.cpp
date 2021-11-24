@@ -12,7 +12,8 @@ int main(int argc, char** argv) {
         ROS_INFO("nh_p has video_file parameter");
     }
     apriltag_ros::DetectorOffline off_line_detector(nh, nh_private);
-    off_line_detector.ReadImage();
+    // off_line_detector.readImage();
+    off_line_detector.readCompressedImageFromBag();
     // off_line_detector.t1.join();
     return 0;
 }
